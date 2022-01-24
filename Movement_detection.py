@@ -1,7 +1,6 @@
 import cv2
-import sys
 import numpy as np
-import imutils
+
 
 from datetime import datetime
 
@@ -19,9 +18,9 @@ def get_file_name():
     
     
 device = 0
-cap = cv2.VideoCapture('testvid.mp4')
+cap = cv2.VideoCapture('vid_kor.mp4')
 
-frame_limit = 120
+frame_limit = 60
     
 
 pos_frame = 0
@@ -39,6 +38,7 @@ time_ref = datetime.now()
 count = 0
 f_count = 0
 p_count = 0
+occ_tmp = 0
 
 prev_percentage = 0
 
@@ -74,7 +74,8 @@ while True:
             f_count = f_count+1
             count = count+1
             
-        if(f_count == fps*60): #~1 minute
+        if(f_count == 20*60): #~1 minute
+            print(fps, f_count)
             output.release()
             dt_string = get_file_name()
             
@@ -84,7 +85,7 @@ while True:
             count = 1
             
         count = count+1
-        if(f_count > fps*60*10): #~10 minutes
+        if(f_count > 20*60*10): #~10 minutes
             output.release()
             dt_string = get_file_name()
             
@@ -99,12 +100,12 @@ while True:
         #print(percentage)
         
         
-        if(percentage > 0.5):
+        if(percentage > 5):
             occuppied = 1
-        if(prev_percentage == percentage and p_count == 0):
+        if(abs(prev_percentage - percentage) < 0.05 and p_count == 0):
             first_frame = np.copy(gray)
             p_count = (frame_limit//2)
-            continue
+            
         p_count = p_count-1
             
         if(count%(frame_limit//2)==0):
@@ -112,7 +113,6 @@ while True:
         
             
             
-        
             
         frame_list.append(fr)
         if(len(frame_list)> frame_limit):
@@ -121,15 +121,16 @@ while True:
             for f in range(0,len(frame_list)):
                 output.write(frame_list.pop(0))
                 f_count = f_count+1
+            
             occ_tmp = frame_limit
             
         else:
             if(occ_tmp > 0):
-                output.write(fr)
-                occ_tmp = occ_tmp - 1
-                f_count = f_count + 1
-                if(len(frame_list)>frame_limit//2):
-                    first_frame = np.copy(gray)
+                for f in range(0,len(frame_list)):
+                    output.write(frame_list.pop(0))
+                    f_count = f_count+1
+                    occ_tmp = occ_tmp - 1
+                
                     
                 
             
@@ -137,15 +138,22 @@ while True:
         cv2.imshow('Frame',cv2.resize(frame,(640,360)))
         cv2.imshow('Gray',cv2.resize(gray,(640,360)))
         cv2.imshow('BG', cv2.resize(first_frame,(640,360)))
+        
         occuppied = 0
         
     else:
-        cap = cv2.VideoCapture('testvid.mp4')
-    
+        
+        output.release()
+        cap.release()
+        cv2.destroyAllWindows()
+        break   
 
-        pos_frame = 0
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH,640)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT,360)
+        
+        #cap = cv2.VideoCapture('testvid.mp4')
+        
+        #pos_frame = 0
+        #cap.set(cv2.CAP_PROP_FRAME_WIDTH,640)
+        #cap.set(cv2.CAP_PROP_FRAME_HEIGHT,360)
 
     if cv2.waitKey(10) == 27:
         output.release()
